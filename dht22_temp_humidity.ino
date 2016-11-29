@@ -36,8 +36,6 @@ ESP8266WebServer HTTPserver(HTTP_PORT);
 
 void setupDHT(void) {
   sensor_t sensor;
-  String names[] = {"Temperature", "Humidity"};
-  String units[] = {"°C", "%"};
 
   dht.begin();
   writeSyslog("DHT" + String(DHTTYPE) + " Sensor ready.");
@@ -45,15 +43,19 @@ void setupDHT(void) {
   for(int i = 0; i < 2; i++) {
     if (i == 0) {
       dht.temperature().getSensor(&sensor);
+      name = "Temperature";
+      unit = "°C";
     } else {
       dht.humidity().getSensor(&sensor);
+      name = "Humidity";
+      unit = "%";
     }
-    writeSyslog(names[i] + " Sensor:     " + String(sensor.name));
-    writeSyslog(names[i] + " Driver Ver: " + String(sensor.version));
-//  writeSyslog(names[i] + " Unique ID:  " + String(sensor.sensor_id));
-    writeSyslog(names[i] + " Max Value:  " + String(sensor.max_value) + units[i]);
-    writeSyslog(names[i] + " Min Value:  " + String(sensor.min_value) + units[i]);
-    writeSyslog(names[i] + " Resolution: " + String(sensor.resolution) + units[i]);
+    writeSyslog(name + " Sensor:     " + String(sensor.name));
+    writeSyslog(name + " Driver Ver: " + String(sensor.version));
+//  writeSyslog(name + " Unique ID:  " + String(sensor.sensor_id));
+    writeSyslog(name + " Max Value:  " + String(sensor.max_value) + unit);
+    writeSyslog(name + " Min Value:  " + String(sensor.min_value) + unit);
+    writeSyslog(name + " Resolution: " + String(sensor.resolution) + unit);
   }
   writeSyslog("------------------------------------");
 
@@ -202,7 +204,8 @@ void setupArduinoOTA(String sensorName) {
     writeSyslog("ArduinoOTA Ended");
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    writeSyslog("ArduinoOTA Progress: " + String(progress / (total / 100)) + "\r");
+    writeSyslog("ArduinoOTA Progress: " +
+        String(progress / (total / 100)) + "\r");
   });
   ArduinoOTA.onError([](ota_error_t error) {
     String msg = "ArduinoOTA Error[" + String(error) + "]: ";
