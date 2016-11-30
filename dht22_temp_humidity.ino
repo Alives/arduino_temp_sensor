@@ -20,7 +20,7 @@
 const char* ssid = "";  // Replace this.
 const char* psk = "";   // Replace this.
 const String sensor_array[] = {
-  "c6e1ff", "d65f9b", "d65b01", "d658f7", "d65878", "068231", "92ea79"};
+  "c6e1ff", "92ea79", "d65b01", "d658f7", "d65878", "068231"};
 bool setupComplete = false;
 bool wifiConnected = false;
 uint32_t delayMS;
@@ -36,6 +36,8 @@ ESP8266WebServer HTTPserver(HTTP_PORT);
 
 void setupDHT(void) {
   sensor_t sensor;
+  String name;
+  String unit;
 
   dht.begin();
   writeSyslog("DHT" + String(DHTTYPE) + " Sensor ready.");
