@@ -1,9 +1,14 @@
-/*  4.0:
+/*  5.0:
+ *   - AutoConnect instead of WifiManager.
+ *   - No 404, all URIs result in metrics output.
+ *   - struct for temps.
+ * 
+ *  4.0:
  *   - Fixed issue where syslog was sent twice before clearing.
  *   - Also push log via HTTPS.
  *   - Clean up includes.
  *   - POST with sections designated by <> tags and data in json format.
- *   - Add heap and RSSI metrics.
+ *   - Add heap and RSSI metrics
  *   - Convert strings to F() where possible.
  *
  *  3.0:
@@ -19,9 +24,9 @@
  */
 
 #include <ArduinoOTA.h>
+#include <AutoConnect.h>
 #include <DHT_U.h>
 #include <WiFiClientSecure.h>
-#include <WiFiManager.h>
 
 #define DHTPIN 5
 #define DHTTYPE DHT22
@@ -29,11 +34,11 @@
 #define VERSION "3.0"
 
 
-const char* host = "listener.domain.com" + COMPILER ERROR FORCING USER TO UPDATE
-const int https_port = 443;
-const String sensor_array[] = {
+const PROGMEM char* host = "listener.domain.com" + ERROR -> UPDATE THIS!
+const PROGMEM int https_port = 443;
+const PROGMEM String sensor_array[] = {
   "c6e1ff", "92ea79", "d65b01", "d658f7", "d65878", "068231"};
-const String sensor_names[] = {
+const PROGMEM String sensor_names[] = {
   "1", "2", "kitchen", "travel", "outside", "bedroom"};
 String sensor_name = "";
 String log_str = "";
@@ -46,7 +51,12 @@ uint32_t temperature_errors = 0L;
 DHT_Unified dht(DHTPIN, DHTTYPE);
 ESP8266WebServer http_server(80);
 WiFiClientSecure https_client;
-WiFiManager wifiManager;
+AutoConnect portal(http_server);
+
+typedef struct {
+  float c;
+  float f;
+} temperatures;
 
 void syslog (const String line) {
   String entry = '[' + String(millis() / 1000.0) + ']' + ' ' + line;
@@ -54,7 +64,8 @@ void syslog (const String line) {
   log_str += entry + '\n';
 }
 
-float getTemperature () {
+temperatures getTemperature () {
+  float c;
   sensors_event_t event;
   dht.temperature().getEvent(&event);
   while (isnan(event.temperature)) {
@@ -63,12 +74,8 @@ float getTemperature () {
     delay(250);
     dht.temperature().getEvent(&event);
   }
-
-  return event.temperature;
-}
-
-float getFahrenheit (float c) {
-  return c * 1.8 + 32;
+  c = event.temperature;
+  return { c , (float) (c * 1.8) + 32 };
 }
 
 float getHumidity () {
@@ -85,7 +92,7 @@ float getHumidity () {
 
 String getSensorData () {
   const String comma = F(", ");
-  float c = getTemperature();
+  temperatures temps = getTemperature();
   String data = F("{");
   data += F("\"free_heap\": ");
   data += String(ESP.getFreeHeap());
@@ -109,10 +116,10 @@ String getSensorData () {
   data += String(temperature_errors);
   data += comma;
   data += F("\"tempC\": ");
-  data += String(c);
+  data += String(temps.c);
   data += comma;
   data += F("\"tempF\": ");
-  data += String(getFahrenheit(c));
+  data += String(temps.f);
   data += comma;
   data += F("\"uptimeMS\": ");
   data += String(millis());
@@ -124,24 +131,6 @@ void httpRoot () {
   const String msg = F("HTTP GET ");
   syslog(msg + http_server.uri());
   http_server.send(200, F("text/plain"), getSensorData());
-}
-
-void notFound () {
-  String msg = F("File Not Found\n\nURI: ");
-  msg += http_server.uri();
-  msg += F("\nMethod: ");
-  msg += (http_server.method() == HTTP_GET) ? F("GET") : F("POST");
-  msg += F("\nArguments: ");
-  msg += http_server.args();
-  msg += '\n';
-  for (uint8_t i = 0; i < http_server.args(); i++) {
-    msg += ' ' + http_server.argName(i) + ": " + http_server.arg(i) + '\n';
-  }
-  http_server.send(404, F("text/plain"), msg);
-  if (http_server.uri() != F("/favicon.ico")) {
-    msg = F("HTTP/404 ");
-    syslog(msg + http_server.uri());
-  }
 }
 
 void httpLedsOn () {
@@ -159,6 +148,8 @@ void httpLedsOff () {
   syslog(msg);
   http_server.send(200, F("text/plain"), msg);
 }
+
+void httpNoOp() {}  // Don't do anything.
 
 void httpReset () {
   const String msg = F("Resetting system...");
@@ -282,46 +273,19 @@ void setSensorName () {
   syslog(F("Sensor name detection error!"));
 }
 
-void handleWiFi () {
-  if (WiFi.status() == WL_CONNECTED) { return; }
-
-  String msg;
-
-  syslog(F("WiFi Reconnecting..."));
-
+bool startCaptivePortal(__attribute__((unused)) IPAddress ip) {
   int onoff = 0;
-
-  digitalWrite(2, 0);
-
-  wifiManager.setConfigPortalTimeout(30);
-  String ssid = sensor_name + F(" ") + WiFi.macAddress();
-  if (!wifiManager.autoConnect(ssid.c_str())) {
-    syslog(F("Failed to connect to WiFi and hit timeout. Rebooting..."));
-    systemReset();
-  }
-
-  msg = F("Connecting to SSID: ");
-  syslog(msg + WiFi.SSID());
   while (WiFi.status() != WL_CONNECTED) {
     digitalWrite(2, onoff);
     onoff ^= 1;
     delay(25);
   }
-  digitalWrite(2, 1);
-
-  syslog(F("Connected!"));
-  msg = F("RSSI: ");
-  syslog(msg + String(WiFi.RSSI()) + F("dBm"));
-  msg = F("IP address: ");
-  syslog(msg + WiFi.localIP().toString());
-  msg = F("Subnet mask: ");
-  syslog(msg + WiFi.subnetMask().toString());
-  msg = F("Gateway: ");
-  syslog(msg + WiFi.gatewayIP().toString());
+  return true;
 }
 
 void setup () {
   String msg;
+  String ssid;
   setSensorName();
   Serial.begin(115200);
   delay(100);
@@ -332,36 +296,58 @@ void setup () {
   msg = F("Chip ID: 0x");
   syslog(msg + String(ESP.getChipId(), HEX));
 
-  http_server.on(F("/"), httpRoot);
+  http_server.on(F("/favicon.ico"), httpNoOp);
   http_server.on(F("/leds_on"), httpLedsOn);
   http_server.on(F("/leds_off"), httpLedsOff);
   http_server.on(F("/post"), httpPost);
   http_server.on(F("/reset"), httpReset);
   http_server.on(F("/reboot"), httpReset);
-  http_server.onNotFound(notFound);
-  http_server.begin();
-  syslog(F("HTTP server started on port 80"));
+  portal.onNotFound(httpRoot);  // Just show default page.
 
   pinMode(0, OUTPUT);
   pinMode(2, OUTPUT);
   digitalWrite(0, 1);
+  digitalWrite(2, 0);
 
   msg = F("MAC address: ");
   syslog(msg + WiFi.macAddress());
   WiFi.hostname(sensor_name);
 
-  handleWiFi();
+  AutoConnectConfig config;
+  ssid = sensor_name + F(" ") + WiFi.macAddress();
+  config.apid = ssid.c_str();
+  config.psk = F("");
+  config.autoReconnect = true;
+  config.portalTimeout = 60000;  // Timeout in 60s.
+  portal.config(config);
+
+  while (true) {
+    msg = F("Attempting to connect to SSID: ");
+    syslog(msg + WiFi.SSID());
+    portal.onDetect(startCaptivePortal);
+    if (portal.begin()) { break; }
+    delay(250);
+  }
+
+  digitalWrite(2, 1);
+  syslog(F("Connected!"));
+  msg = F("RSSI: ");
+  syslog(msg + String(WiFi.RSSI()) + F("dBm"));
+  msg = F("IP address: ");
+  syslog(msg + WiFi.localIP().toString());
+  msg = F("Subnet mask: ");
+  syslog(msg + WiFi.subnetMask().toString());
+  msg = F("Gateway: ");
+  syslog(msg + WiFi.gatewayIP().toString());
 
   setupArduinoOTA(sensor_name);
-
   dht.begin();
   syslog("DHT" + String(DHTTYPE) + " Sensor ready.");
 }
 
 void loop () {
-  handleWiFi();
   ArduinoOTA.handle();
-  http_server.handleClient();
+  portal.handleClient();
   writeGraphite();
   yield();
 }
