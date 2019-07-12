@@ -2,7 +2,7 @@
  *   - AutoConnect instead of WifiManager.
  *   - No 404, all URIs result in metrics output.
  *   - struct for temps.
- * 
+ *
  *  4.0:
  *   - Fixed issue where syslog was sent twice before clearing.
  *   - Also push log via HTTPS.
