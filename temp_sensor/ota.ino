@@ -1,19 +1,17 @@
 #include <ArduinoOTA.h>
 
 void setupArduinoOTA () {
-  ArduinoOTA.onStart ([]() { syslog(F("ArduinoOTA Started")); });
+  ArduinoOTA.onStart ([]() { Serial.println(F("ArduinoOTA Started")); });
 
-  ArduinoOTA.onEnd ([]() { syslog(F("ArduinoOTA Ended")); });
+  ArduinoOTA.onEnd ([]() { Serial.println(F("ArduinoOTA Ended")); });
 
   ArduinoOTA.onProgress ([](unsigned int progress, unsigned int total) {
-    // OTA pauses execution, syslog won't be sent.
     Serial.print(F("ArduinoOTA Progress: "));
     Serial.print(String(progress / (total / 100.0)));
     Serial.print(F("%\r"));
   });
 
   ArduinoOTA.onError ([](ota_error_t error) {
-    // OTA pauses execution, syslog won't be sent.
     Serial.print(F("ArduinoOTA Error["));
     Serial.print(String(error));
     Serial.print(F("]: "));
@@ -24,7 +22,7 @@ void setupArduinoOTA () {
     else if (error == OTA_END_ERROR) Serial.println(F("ArduinoOTA End Failed"));
   });
 
-  ArduinoOTA.setHostname(getSensorName().c_str());
+  ArduinoOTA.setHostname(sensor_name.c_str());
   ArduinoOTA.setPassword(PSTR("password"));
   ArduinoOTA.begin();
 }

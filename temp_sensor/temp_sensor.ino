@@ -1,8 +1,13 @@
-#define VERSION "5.0"
-#define HOST "CHANGE ME CHANGE ME CHANGE ME CHANGE ME"
+#define VERSION "6.0"
+#define HOST "change-this-value!!" ERROR HERE TO FORCE USER TO UPDATE VALUE
 #define HTTP_POST_INTERVAL 5000
+#define HTTPS_PORT 443
 
-/*  5.0:
+/*  6.0:
+ *   - data now in concise format instead of json for less bandwidth use.
+ *   - No more syslog.
+ *
+ * 5.0:
  *   - No 404, all URIs result in metrics output.
  *   - struct for temps and errors.
  *   - split all functions into specific files.
@@ -29,34 +34,36 @@
  *  - Added WifiManager
  */
 
-int sensor_id = -1;
+struct env_t { float c, f, h; } env;
+struct sensor_errors_t { uint8_t humidity, temperature; } errors;
 
-String getSensorName () {
+uint32_t https_connect_attempts = 0L;
+uint32_t next_post_timestamp = 0L;
+
+String host, sensor_name, ssid;
+
+void setSensorName () {
   struct sensor_s {
     const int sensor_id;
-    const __FlashStringHelper* sensor_name;
+    const char * sensor_name;
   };
   sensor_s sensors[] = {
-    {0xc6e1ff, F("1")},
-    {0x92ea79, F("2")},
-    {0xd65b01, F("kitchen")},
-    {0xd658f7, F("travel")},
-    {0xd65878, F("outside")},
-    {0x068231, F("bedroom")},
+    {0xc6e1ff, PSTR("1")},
+    {0x92ea79, PSTR("2")},
+    {0xd65b01, PSTR("kitchen")},
+    {0xd658f7, PSTR("travel")},
+    {0xd65878, PSTR("outside")},
+    {0x068231, PSTR("bedroom")},
   };
-  if (sensor_id >= 0) {
-    return PSTR("sensor_") + String(sensors[sensor_id].sensor_name);
-   }
-
   int id = ESP.getChipId();
+
+  sensor_name = PSTR("ERROR");
   for (unsigned int i = 0; i < sizeof(sensors); i++) {
     if (sensors[i].sensor_id == id) {
-      sensor_id = i;
-      return getSensorName();
+      sensor_name = sensors[i].sensor_name;
+      break;
     }
   }
-  syslog(F("Sensor ID detection error!"));
-  return PSTR("ERROR_sensor_name");
 }
 
 void setup () {
@@ -67,20 +74,23 @@ void setup () {
   pinMode(2, OUTPUT);
   digitalWrite(0, 1);
 
-  syslog(String(PSTR("temp_sensor version ")) + PSTR(VERSION));
-  syslog(PSTR("Chip ID: 0x") + String(ESP.getChipId(), HEX));
-  syslog(getSensorName());
+  errors = {0,0};
+  host = PSTR(HOST);
+
+  Serial.print(F("Version "));
+  Serial.println(F(VERSION));
+  setSensorName();
+  Serial.print(F("Chip ID: 0x"));
+  Serial.println(String(ESP.getChipId(), HEX) + F(" (") + sensor_name + ')');
 
   setupArduinoOTA();
-  syslog(F("ArduinoOTA started."));
+  Serial.println(F("ArduinoOTA started."));
   setupDHT();
-  syslog(F("DHT Sensor started."));
-  setupHTTPSClient();
-  syslog(F("HTTPS client started."));
+  Serial.println(F("DHT started."));
   setupHTTPServer();
-  syslog(F("HTTP server started."));
+  Serial.println(F("HTTP server started."));
   setupWiFi();
-  syslog(F("WiFi started."));
+  Serial.println(F("WiFi started."));
 }
 
 void loop () {
