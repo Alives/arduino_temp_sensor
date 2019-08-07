@@ -1,5 +1,7 @@
+#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 
+ESP8266HTTPUpdateServer http_updater;
 ESP8266WebServer http_server(80);
 
 void httpRoot () {
@@ -28,7 +30,7 @@ void httpRoot () {
       "\"uptimeMS\":%lu\n"
     "}"),
     ESP.getChipId(),
-    sensor_name.c_str(),
+    sensor_name,
     PSTR(VERSION),
     free_heap,
     heap_fragmentation_percent,
@@ -37,7 +39,7 @@ void httpRoot () {
     env.h,
     max_free_block_size,
     WiFi.RSSI(),
-    sensor_name.c_str(),
+    sensor_name,
     errors.temperature,
     env.c,
     env.f,
@@ -51,6 +53,7 @@ void httpNoOp() { return; }  // Don't do anything.
 void setupHTTPServer () {
   http_server.on(F("/favicon.ico"), httpNoOp);
   http_server.onNotFound(httpRoot);
+  http_updater.setup(&http_server);
   http_server.begin();
 }
 

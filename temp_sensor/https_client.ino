@@ -1,11 +1,15 @@
 #include <WiFiClientSecure.h>
 
+BearSSL::Session session;
 WiFiClientSecure https_client;
 
 void connectHTTPSClient() {
+  https_client.setInsecure();
+  https_client.setSession(&session);
   for (;;) {
-    https_client.setInsecure();
-    https_client.connect(host, HTTPS_PORT);
+    Serial.print(F("Connecting to: "));
+    Serial.println(host);
+    https_client.connect(host.c_str(), HTTPS_PORT);
     https_connect_attempts += 1;
     if (https_client.connected()) {
       Serial.println(F("HTTPS client connected."));
@@ -37,7 +41,7 @@ void postData () {
     env.h,
     max_free_block_size,
     WiFi.RSSI(),
-    sensor_name.c_str(),
+    sensor_name,
     errors.temperature,
     env.c,
     env.f,
@@ -46,7 +50,7 @@ void postData () {
   data = (char *) realloc(data, (strlen(data) + 1) * sizeof(char));
 
   char * post = (char *) malloc(
-      (strlen(data) + host.length() + sensor_name.length() + 70)
+      (strlen(data) + host.length() + strlen(sensor_name) + 70)
       * sizeof(char));
   sprintf(post, PSTR(
     "POST / HTTP/1.1\r\n"
@@ -55,7 +59,7 @@ void postData () {
     "Content-Length: %lu\r\n\r\n"
     "%s"),
     host.c_str(),
-    sensor_name.c_str(),
+    sensor_name,
     strlen(data),
     data);
   free(data);

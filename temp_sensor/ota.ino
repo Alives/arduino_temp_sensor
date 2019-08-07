@@ -22,8 +22,10 @@ void setupArduinoOTA () {
     else if (error == OTA_END_ERROR) Serial.println(F("ArduinoOTA End Failed"));
   });
 
-  ArduinoOTA.setHostname(sensor_name.c_str());
-  ArduinoOTA.setPassword(PSTR("password"));
+  ArduinoOTA.setHostname(sensor_name);
+  ArduinoOTA.setPassword(ota_password.c_str());
+  Serial.print(F("OTA password: "));
+  Serial.println(ota_password);
   ArduinoOTA.begin();
 }
 

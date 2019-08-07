@@ -1,28 +1,34 @@
-#define VERSION "6.0"
-#define HOST "change-this-value!!" ERROR HERE TO FORCE USER TO UPDATE VALUE
+#define VERSION "7.0"
 #define HTTP_POST_INTERVAL 5000
 #define HTTPS_PORT 443
 
-/*  6.0:
- *   - data now in concise format instead of json for less bandwidth use.
- *   - No more syslog.
+/* 7.0:
+ *  - Switched to WiFiManager development branch at commit 34d9a97.
+ *  - Save host and ota_password to SPIFFS using WiFiManager to set them.
+ *  - Added http update server: curl -F "image=@img.bin" fqdn/update
+ *  - Stop wifi portal on successful connection.
+ *  - Start wifiManager prior to HTTPServer.
+ *
+ * 6.0:
+ *  - data now in concise format instead of json for less bandwidth use.
+ *  - No more syslog.
  *
  * 5.0:
- *   - No 404, all URIs result in metrics output.
- *   - struct for temps and errors.
- *   - split all functions into specific files.
- *   - Use F()/PSTR() macros everywhere.
- *   - No syslog for OTA since it only outputs to Serial.
+ *  - No 404, all URIs result in metrics output.
+ *  - struct for temps and errors.
+ *  - split all functions into specific files.
+ *  - Use F()/PSTR() macros everywhere.
+ *  - No syslog for OTA since it only outputs to Serial.
  *
- *  4.0:
- *   - Fixed issue where syslog was sent twice before clearing.
- *   - Also push log via HTTPS.
- *   - Clean up includes.
- *   - POST with sections designated by <> tags and data in json format.
- *   - Add heap and RSSI metrics.
- *   - Convert strings to F() where possible.
+ * 4.0:
+ *  - Fixed issue where syslog was sent twice before clearing.
+ *  - Also push log via HTTPS.
+ *  - Clean up includes.
+ *  - POST with sections designated by <> tags and data in json format.
+ *  - Add heap and RSSI metrics.
+ *  - Convert strings to F() where possible.
  *
- *  3.0:
+ * 3.0:
  *  - Push data via https.
  *  - Use millis() for intervals and handle rollovers.
  *  - Added /reset function (though it probably doesn't work well).
@@ -34,13 +40,13 @@
  *  - Added WifiManager
  */
 
+char * sensor_name;
 struct env_t { float c, f, h; } env;
 struct sensor_errors_t { uint8_t humidity, temperature; } errors;
-
 uint32_t https_connect_attempts = 0L;
 uint32_t next_post_timestamp = 0L;
-
-String host, sensor_name, ssid;
+String host;
+String ota_password;
 
 void setSensorName () {
   struct sensor_s {
@@ -57,10 +63,13 @@ void setSensorName () {
   };
   int id = ESP.getChipId();
 
-  sensor_name = PSTR("ERROR");
+  sensor_name = (char *) malloc(6 * sizeof(char));
+  strcpy(sensor_name, PSTR("ERROR"));
   for (unsigned int i = 0; i < sizeof(sensors); i++) {
     if (sensors[i].sensor_id == id) {
-      sensor_name = sensors[i].sensor_name;
+      sensor_name = (char *) realloc(sensor_name,
+          (strlen(sensors[i].sensor_name) + 1) * sizeof(char));
+      strcpy(sensor_name, sensors[i].sensor_name);
       break;
     }
   }
@@ -75,7 +84,9 @@ void setup () {
   digitalWrite(0, 1);
 
   errors = {0,0};
-  host = PSTR(HOST);
+  setupFS();
+  host = readFile(PSTR("/host"));
+  ota_password = readFile(PSTR("/pass"));
 
   Serial.print(F("Version "));
   Serial.println(F(VERSION));
@@ -83,14 +94,14 @@ void setup () {
   Serial.print(F("Chip ID: 0x"));
   Serial.println(String(ESP.getChipId(), HEX) + F(" (") + sensor_name + ')');
 
+  setupWiFi();
+  Serial.println(F("WiFi started."));
   setupArduinoOTA();
   Serial.println(F("ArduinoOTA started."));
   setupDHT();
   Serial.println(F("DHT started."));
   setupHTTPServer();
   Serial.println(F("HTTP server started."));
-  setupWiFi();
-  Serial.println(F("WiFi started."));
 }
 
 void loop () {
