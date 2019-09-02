@@ -35,6 +35,6 @@ void updateHumidity() {
   env.h = event.relative_humidity;
 }
 
-void setupDHT () {
+void setupDHT() {
   dht.begin();
 }

@@ -8,7 +8,7 @@ String readFile(const String filename) {
   File file = SPIFFS.open(filename, "r");
   String content = file.readString();
   file.close();
-  Serial.println(PSTR("Read ") + filename + PSTR(": '") + content + PSTR("'"));
+  Serial.println(PSTR("Read ") + filename + PSTR(": \"") + content + PSTR("\""));
   return content;
 }
 
@@ -16,7 +16,7 @@ void writeFile(const String filename, String content) {
   File file = SPIFFS.open(filename, "w");
   file.print(content);
   file.close();
-  Serial.println(PSTR("Wrote ") + filename + PSTR(": '") + content + PSTR("'"));
+  Serial.println(PSTR("Wrote ") + filename + PSTR(": \"") + content + PSTR("\""));
 }
 
 void setupFS() {

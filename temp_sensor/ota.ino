@@ -1,17 +1,17 @@
 #include <ArduinoOTA.h>
 
-void setupArduinoOTA () {
-  ArduinoOTA.onStart ([]() { Serial.println(F("ArduinoOTA Started")); });
+void setupArduinoOTA() {
+  ArduinoOTA.onStart([]() { Serial.println(F("ArduinoOTA Started")); });
 
-  ArduinoOTA.onEnd ([]() { Serial.println(F("ArduinoOTA Ended")); });
+  ArduinoOTA.onEnd([]() { Serial.println(F("ArduinoOTA Ended")); });
 
-  ArduinoOTA.onProgress ([](unsigned int progress, unsigned int total) {
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.print(F("ArduinoOTA Progress: "));
     Serial.print(String(progress / (total / 100.0)));
     Serial.print(F("%\r"));
   });
 
-  ArduinoOTA.onError ([](ota_error_t error) {
+  ArduinoOTA.onError([](ota_error_t error) {
     Serial.print(F("ArduinoOTA Error["));
     Serial.print(String(error));
     Serial.print(F("]: "));
@@ -24,11 +24,9 @@ void setupArduinoOTA () {
 
   ArduinoOTA.setHostname(sensor_name);
   ArduinoOTA.setPassword(ota_password.c_str());
-  Serial.print(F("OTA password: "));
-  Serial.println(ota_password);
   ArduinoOTA.begin();
 }
 
-void handleArduinoOTA () {
+void handleArduinoOTA() {
   ArduinoOTA.handle();
 }
