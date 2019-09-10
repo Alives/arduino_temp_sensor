@@ -124,9 +124,10 @@ void setupWiFi() {
   }
   analogWrite(LED, 0);
   wifi_manager.stopConfigPortal();
-  wifi_manager.startWebPortal();
-  wifi_manager.setWebServerCallback(onJSONCallback);
   wifi_manager.setCaptivePortalEnable(false);
+  wifi_manager.setWebServerCallback(onJSONCallback);
+  wifi_manager.startWebPortal();
+  WiFi.mode(WIFI_STA);
 }
 
 void saveParams() {
