@@ -25,6 +25,11 @@ WiFiManagerParameter param_ota_password(
     "OTA Password",
     ota_password.c_str(), 41);
 
+WiFiManagerParameter param_metric_hostname(
+    "metric_hostname",
+    "Metric Hostname",
+    metric_hostname.c_str(), 41);
+
 bool getWiFiStatus() {
   return (WiFi.status() == WL_CONNECTED);
 }
@@ -39,58 +44,8 @@ void handleHTTPServer() {
   wifi_manager.process();
 }
 
-void onJSONCallback() {
-  wifi_manager.server->on(PSTR("/json"), sendJSON);
-}
-
-void sendJSON() {
-  updateEnvironment();
-  // Read these prior to allocating data string.
-  uint32_t free_heap = ESP.getFreeHeap();
-  uint32_t max_free_block_size = ESP.getMaxFreeBlockSize();
-  int heap_fragmentation_percent = ESP.getHeapFragmentation();
-
-  char * response = (char *) malloc(384 * sizeof(char));
-  sprintf(response, PSTR(
-      "{\n"
-        "\"Chip ID\":\"0x%X (%s)\",\n"
-        "\"Version\":\"%s\",\n"
-        "\"client_connect_attempts\":%lu,\n"
-        "\"free_heap\":%lu,\n"
-        "\"heap_fragmentation_percent\":%d,\n"
-        "\"humidity_errors\":%lu,\n"
-        "\"humidity\":%0.2f,\n"
-        "\"max_free_block_size\":%lu,\n"
-        "\"RSSI\":%ld,\n"
-        "\"sensor_name\":%s,\n"
-        "\"temperature_errors\":%lu,\n"
-        "\"tempC\":%0.2f,\n"
-        "\"tempF\":%0.2f,\n"
-        "\"wifi_connect_attempts\":%lu,\n"
-        "\"uptimeMS\":%lu\n"
-      "}"),
-      ESP.getChipId(),
-      sensor_name,
-      PSTR(VERSION),
-      client_connect_attempts,
-      free_heap,
-      heap_fragmentation_percent,
-      errors.humidity,
-      env.h,
-      max_free_block_size,
-      WiFi.RSSI(),
-      sensor_name,
-      errors.temperature,
-      env.c,
-      env.f,
-      wifi_connect_attempts,
-      millis());
-  wifi_manager.server->send(200, F("text/plain"), response);
-  free(response);
-}
-
 void setupWiFi() {
-  WiFi.hostname(String(sensor_name));
+  WiFi.hostname(sensor_name);
   Serial.println(F("WiFi Reconnecting..."));
   Serial.println(PSTR("MAC address: ") + WiFi.macAddress());
   Serial.println(PSTR("Connecting to SSID: ") + WiFi.SSID());
@@ -103,6 +58,7 @@ void setupWiFi() {
   wifi_manager.addParameter(&param_carbon_host);
   wifi_manager.addParameter(&param_https_host);
   wifi_manager.addParameter(&param_ota_password);
+  wifi_manager.addParameter(&param_metric_hostname);
 
   char * ssid = (char *) malloc((8 + strlen(sensor_name)) * sizeof(char));
   sprintf(ssid, PSTR("sensor_%s"), sensor_name);
@@ -110,7 +66,8 @@ void setupWiFi() {
   if ((destination.length() == 0) ||
       (carbon_host.length() == 0) ||
       (https_host.length() == 0) ||
-      (ota_password.length() == 0)) {
+      (ota_password.length() == 0) ||
+      (metric_hostname.length() == 0)) {
     wifi_manager.startConfigPortal(ssid, NULL);
   }
   if (!wifi_manager.autoConnect(ssid)) {
@@ -125,9 +82,10 @@ void setupWiFi() {
   analogWrite(LED, 0);
   wifi_manager.stopConfigPortal();
   wifi_manager.setCaptivePortalEnable(false);
-  wifi_manager.setWebServerCallback(onJSONCallback);
   wifi_manager.startWebPortal();
   WiFi.mode(WIFI_STA);
+  Serial.print("Hostname: ");
+  Serial.println(WiFi.hostname());
 }
 
 void saveParams() {
@@ -155,5 +113,11 @@ void saveParams() {
   if ((value.length() > 0) && (!ota_password.equals(value))) {
     ota_password = value;
     writeFile(PSTR("/ota_password"), ota_password);
+  }
+
+  value = param_metric_hostname.getValue();
+  if ((value.length() > 0) && (!metric_hostname.equals(value))) {
+    metric_hostname = value;
+    writeFile(PSTR("/metric_hostname"), metric_hostname);
   }
 }

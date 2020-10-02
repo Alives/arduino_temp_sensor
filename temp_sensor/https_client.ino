@@ -31,27 +31,28 @@ void handleHTTPSClient() {
   uint32_t max_free_block_size = ESP.getMaxFreeBlockSize();
   int heap_fragmentation_percent = ESP.getHeapFragmentation();
 
-  char * data = (char *) malloc(200 * sizeof(char));
+  char * data = (char *) malloc(256 * sizeof(char));
 
-  sprintf(data, PSTR("%lu,%lu,%d,%lu,%0.2f,%lu,%ld,%s,%lu,%0.2f,%0.2f,%lu,%lu,%s"),
+  sprintf(data,
+    PSTR("%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%lu,%lu,%d,%lu,%ld,%s,%lu,%lu,%s"),
+    env.altitude,
+    env.celcius,
+    env.fahrenheit,
+    env.humidity,
+    env.pressure,
     client_connect_attempts,
     free_heap,
     heap_fragmentation_percent,
-    errors.humidity,
-    env.h,
     max_free_block_size,
     WiFi.RSSI(),
-    sensor_name,
-    errors.temperature,
-    env.c,
-    env.f,
+    metric_hostname.c_str(),
     wifi_connect_attempts,
     millis(),
     PSTR(VERSION));
   data = (char *) realloc(data, (strlen(data) + 1) * sizeof(char));
 
   char * post = (char *) malloc(
-      (strlen(data) + https_host.length() + strlen(sensor_name) + 70)
+      (strlen(data) + https_host.length() + metric_hostname.length() + 70)
       * sizeof(char));
   sprintf(post, PSTR(
     "POST / HTTP/1.1\r\n"
@@ -60,7 +61,7 @@ void handleHTTPSClient() {
     "Content-Length: %lu\r\n\r\n"
     "%s"),
     https_host.c_str(),
-    sensor_name,
+    metric_hostname.c_str(),
     strlen(data),
     data);
   free(data);
