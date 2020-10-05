@@ -63,11 +63,8 @@ void setupWiFi() {
   char * ssid = (char *) malloc((8 + strlen(sensor_name)) * sizeof(char));
   sprintf(ssid, PSTR("sensor_%s"), sensor_name);
   analogWrite(LED, 10);
-  if ((destination.length() == 0) ||
-      (carbon_host.length() == 0) ||
-      (https_host.length() == 0) ||
-      (ota_password.length() == 0) ||
-      (metric_hostname.length() == 0)) {
+  if ((destination.length() + carbon_host.length() + https_host.length() +
+       ota_password.length() + metric_hostname.length()) == 0) {
     wifi_manager.startConfigPortal(ssid, NULL);
   }
   if (!wifi_manager.autoConnect(ssid)) {
@@ -92,31 +89,31 @@ void saveParams() {
   String value;
   // Both write_carbon and write_https will have the same value.
   value = param_write_carbon.getValue();
-  if ((value.length() > 0) && (!destination.equals(value))) {
+  if (!destination.equals(value)) {
     destination = value;
     writeFile(PSTR("/destination"), destination);
   }
 
   value = param_carbon_host.getValue();
-  if ((value.length() > 0) && (!carbon_host.equals(value))) {
+  if (!carbon_host.equals(value)) {
     carbon_host = value;
     writeFile(PSTR("/carbon_host"), carbon_host);
   }
 
   value = param_https_host.getValue();
-  if ((value.length() > 0) && (!https_host.equals(value))) {
+  if (!https_host.equals(value)) {
     https_host = value;
     writeFile(PSTR("/https_host"), https_host);
   }
 
   value = param_ota_password.getValue();
-  if ((value.length() > 0) && (!ota_password.equals(value))) {
+  if (!ota_password.equals(value)) {
     ota_password = value;
     writeFile(PSTR("/ota_password"), ota_password);
   }
 
   value = param_metric_hostname.getValue();
-  if ((value.length() > 0) && (!metric_hostname.equals(value))) {
+  if (!metric_hostname.equals(value)) {
     metric_hostname = value;
     writeFile(PSTR("/metric_hostname"), metric_hostname);
   }

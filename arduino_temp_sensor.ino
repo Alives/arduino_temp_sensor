@@ -46,8 +46,8 @@ void setSensorName () {
 
 void setup() {
   Serial.begin(19200);
-  Serial.println();
-  delay(100);
+  Serial.println(PSTR("Delaying for serial monitor..."));
+  delay(POST_INTERVAL);
   pinMode(0, OUTPUT);
   pinMode(2, OUTPUT);
   digitalWrite(0, 1);
@@ -71,6 +71,7 @@ void setup() {
   Serial.println(F("ArduinoOTA started."));
   setupBME();
   Serial.println(F("BME280 started."));
+  Serial.println(F("\nEntering run loop..."));
 }
 
 void loop() {

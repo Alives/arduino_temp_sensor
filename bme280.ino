@@ -1,6 +1,6 @@
 #include <Adafruit_BME280.h>
 
-#define SEALEVELPRESSURE_HPA (1013.25)
+#define SEALEVELPRESSURE_HPA (1020.0)
 #define BME_PIN 0x76
 
 Adafruit_BME280 bme;
