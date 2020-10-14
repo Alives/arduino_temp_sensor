@@ -1,4 +1,5 @@
 #include <Ethernet.h>
+#include <ESP8266WiFi.h>
 
 #define VERSION "9.0"
 #define CARBON_PORT 2003
@@ -80,10 +81,15 @@ void loop() {
   handleHTTPServer();
   if (millis() >= next_post_timestamp) {
     next_post_timestamp = millis() + POST_INTERVAL;
-    if (destination == String(PSTR("carbon"))) {
-      handleCarbon();
-    } else if (destination == String(PSTR("https"))) {
-      handleHTTPSClient();
+    if (metric_hostname.length() == 0) {
+      Serial.print(F("Not sending metrics, setup needed: "));
+      Serial.println(WiFi.localIP());
+    } else {
+      if (destination == String(PSTR("carbon"))) {
+        handleCarbon();
+      } else if (destination == String(PSTR("https"))) {
+        handleHTTPSClient();
+      }
     }
   }
   yield();
