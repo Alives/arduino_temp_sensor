@@ -25,10 +25,7 @@ void handleCarbon() {
   uint32_t max_free_block_size = ESP.getMaxFreeBlockSize();
   int heap_fragmentation_percent = ESP.getHeapFragmentation();
 
-  char * prefix = (char *) malloc(
-      (13 + metric_hostname.length()) * sizeof(char));
-  strcpy(prefix, PSTR("temp_sensor."));
-  strcat(prefix, metric_hostname.c_str());
+  String prefix = PSTR("temp_sensor.") + metric_hostname;
   Serial.println(PSTR("\nSending carbon data to ") + carbon_host +
                  PSTR(":") + CARBON_PORT + PSTR("/udp:"));
 
@@ -36,60 +33,63 @@ void handleCarbon() {
   // 7 chars for '.  -1.\n'
   // 32 chars for metric name (heap_fragmentation_percent is only 26)
   char * payload = (char *) malloc(
-      (strlen(prefix) + 32 + 7 + 32) * sizeof(char));
+      (prefix.length() + 32 + 7 + 32) * sizeof(char));
 
-  sprintf(payload, PSTR("%s.altitude %0.2f -1.\n"), prefix, env.altitude);
+  sprintf(payload, PSTR("%s.altitude %0.2f -1.\n"), prefix.c_str(),
+          env.altitude);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.celcius %0.2f -1.\n"), prefix, env.celcius);
+  sprintf(payload, PSTR("%s.celcius %0.2f -1.\n"), prefix.c_str(), env.celcius);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.fahrenheit %0.2f -1.\n"), prefix, env.fahrenheit);
+  sprintf(payload, PSTR("%s.fahrenheit %0.2f -1.\n"), prefix.c_str(),
+          env.fahrenheit);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.humidity %0.2f -1.\n"), prefix, env.humidity);
+  sprintf(payload, PSTR("%s.humidity %0.2f -1.\n"), prefix.c_str(),
+          env.humidity);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.pressure %0.2f -1.\n"), prefix, env.pressure);
+  sprintf(payload, PSTR("%s.pressure %0.2f -1.\n"), prefix.c_str(),
+          env.pressure);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.client_connect_attempts %lu -1.\n"), prefix,
+  sprintf(payload, PSTR("%s.client_connect_attempts %lu -1.\n"), prefix.c_str(),
           client_connect_attempts);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.free_heap %lu -1.\n"), prefix, free_heap);
+  sprintf(payload, PSTR("%s.free_heap %lu -1.\n"), prefix.c_str(), free_heap);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.heap_fragmentation_percent %d -1.\n"), prefix,
-          heap_fragmentation_percent);
+  sprintf(payload, PSTR("%s.heap_fragmentation_percent %d -1.\n"),
+          prefix.c_str(), heap_fragmentation_percent);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.max_free_block_size %lu -1.\n"), prefix,
+  sprintf(payload, PSTR("%s.max_free_block_size %lu -1.\n"), prefix.c_str(),
           max_free_block_size);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.RSSI %ld -1.\n"), prefix, WiFi.RSSI());
+  sprintf(payload, PSTR("%s.RSSI %ld -1.\n"), prefix.c_str(), WiFi.RSSI());
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.wifi_connect_attempts %lu -1.\n"), prefix,
+  sprintf(payload, PSTR("%s.wifi_connect_attempts %lu -1.\n"), prefix.c_str(),
           wifi_connect_attempts);
   Serial.print(payload);
   carbon_client.write(payload);
 
-  sprintf(payload, PSTR("%s.uptimeMS %lu -1.\n"), prefix, millis());
+  sprintf(payload, PSTR("%s.uptimeMS %lu -1.\n"), prefix.c_str(), millis());
   Serial.print(payload);
   carbon_client.write(payload);
 
   free(payload);
-  free(prefix);
 }
