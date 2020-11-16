@@ -4,7 +4,7 @@ WiFiClient carbon_client;
 
 void connectCarbonClient() {
   for (;;) {
-    Serial.println(PSTR("Connecting to: ") + carbon_host);
+    Serial.println(String("Connecting to: ") + carbon_host);
     carbon_client.connect(carbon_host.c_str(), CARBON_PORT);
     client_connect_attempts += 1;
     if (carbon_client.connected()) {
@@ -16,80 +16,42 @@ void connectCarbonClient() {
   }
 }
 
+void send(String payload) {
+  Serial.print(payload);
+  carbon_client.write(payload.c_str());
+}
+
+void write_carbon(String metric, String value) {
+  send(String("temp_sensor."));
+  send(metric_hostname);
+  send(String("."));
+  send(metric);
+  send(String(" "));
+  send(value);
+  send(String(" -1.\n"));
+}
+
 void handleCarbon() {
   if (!getWiFiStatus()) { return; }
   if (!carbon_client.connected()) { connectCarbonClient(); }
 
   updateEnvironment();
-  uint32_t free_heap = ESP.getFreeHeap();
-  uint32_t max_free_block_size = ESP.getMaxFreeBlockSize();
-  int heap_fragmentation_percent = ESP.getHeapFragmentation();
 
-  String prefix = PSTR("temp_sensor.") + metric_hostname;
-  Serial.println(PSTR("\nSending carbon data to ") + carbon_host +
-                 PSTR(":") + CARBON_PORT + PSTR("/udp:"));
+  Serial.println(String("\nSending carbon data to ") + carbon_host +
+                 String(":") + CARBON_PORT);
 
-  // 32 chars for all numeric conversions for simplicity.
-  // 7 chars for '.  -1.\n'
-  // 32 chars for metric name (heap_fragmentation_percent is only 26)
-  char * payload = (char *) malloc(
-      (prefix.length() + 32 + 7 + 32) * sizeof(char));
-
-  sprintf(payload, PSTR("%s.altitude %0.2f -1.\n"), prefix.c_str(),
-          env.altitude);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.celcius %0.2f -1.\n"), prefix.c_str(), env.celcius);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.fahrenheit %0.2f -1.\n"), prefix.c_str(),
-          env.fahrenheit);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.humidity %0.2f -1.\n"), prefix.c_str(),
-          env.humidity);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.pressure %0.2f -1.\n"), prefix.c_str(),
-          env.pressure);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.client_connect_attempts %lu -1.\n"), prefix.c_str(),
-          client_connect_attempts);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.free_heap %lu -1.\n"), prefix.c_str(), free_heap);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.heap_fragmentation_percent %d -1.\n"),
-          prefix.c_str(), heap_fragmentation_percent);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.max_free_block_size %lu -1.\n"), prefix.c_str(),
-          max_free_block_size);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.RSSI %ld -1.\n"), prefix.c_str(), WiFi.RSSI());
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.wifi_connect_attempts %lu -1.\n"), prefix.c_str(),
-          wifi_connect_attempts);
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  sprintf(payload, PSTR("%s.uptimeMS %lu -1.\n"), prefix.c_str(), millis());
-  Serial.print(payload);
-  carbon_client.write(payload);
-
-  free(payload);
+  write_carbon(String("altitude "), String(env.altitude));
+  write_carbon(String("celcius "), String(env.celcius));
+  write_carbon(String("fahrenheit "), String(env.fahrenheit));
+  write_carbon(String("humidity "), String(env.humidity));
+  write_carbon(String("pressure "), String(env.pressure));
+  write_carbon(String("free_heap "), String(ESP.getFreeHeap()));
+  write_carbon(String("heap_fragmentation_percent "),
+                    String(ESP.getHeapFragmentation()));
+  write_carbon(String("max_free_block_size "),
+                    String(ESP.getMaxFreeBlockSize()));
+  write_carbon(String("RSSI "), String(WiFi.RSSI()));
+  write_carbon(String("wifi_connect_attempts "),
+                    String(wifi_connect_attempts));
+  write_carbon(String("uptimeMS "), String(millis()));
 }

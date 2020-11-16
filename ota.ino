@@ -1,33 +1,31 @@
 #include <ArduinoOTA.h>
 
 void setupArduinoOTA() {
-  ArduinoOTA.onStart([]() { Serial.println(F("ArduinoOTA Started")); });
+  ArduinoOTA.onStart([]() { Serial.println("ArduinoOTA Started"); });
 
-  ArduinoOTA.onEnd([]() { Serial.println(F("ArduinoOTA Ended")); });
+  ArduinoOTA.onEnd([]() { Serial.println("ArduinoOTA Ended"); });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.print(F("ArduinoOTA Progress: "));
+    Serial.print("ArduinoOTA Progress: ");
     Serial.print(String(progress / (total / 100.0F)));
-    Serial.print(F("%\r"));
+    Serial.print("%\r");
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    Serial.print(F("ArduinoOTA Error["));
-    Serial.print(String(error));
-    Serial.print(F("]: "));
+    Serial.print("ArduinoOTA Error[" + String(error) + "]: ");
     if (error == OTA_AUTH_ERROR)
-      Serial.println(F("ArduinoOTA Auth Failed"));
+      Serial.println("ArduinoOTA Auth Failed");
     else if (error == OTA_BEGIN_ERROR)
-      Serial.println(F("ArduinoOTA Begin Failed"));
+      Serial.println("ArduinoOTA Begin Failed");
     else if (error == OTA_CONNECT_ERROR)
-      Serial.println(F("ArduinoOTA Connect Failed"));
+      Serial.println("ArduinoOTA Connect Failed");
     else if (error == OTA_RECEIVE_ERROR)
-      Serial.println(F("ArduinoOTA Receive Failed"));
+      Serial.println("ArduinoOTA Receive Failed");
     else if (error == OTA_END_ERROR)
-      Serial.println(F("ArduinoOTA End Failed"));
+      Serial.println("ArduinoOTA End Failed");
   });
 
-  ArduinoOTA.setHostname(sensor_name);
+  ArduinoOTA.setHostname(sensor_name.c_str());
   ArduinoOTA.setPassword(ota_password.c_str());
   ArduinoOTA.begin();
 }
