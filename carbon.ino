@@ -4,7 +4,8 @@ WiFiClient carbon_client;
 
 void connectCarbonClient() {
   for (;;) {
-    Serial.println(String("Connecting to: ") + carbon_host);
+    Serial.println(String("Connecting to carbon host ") +
+                   carbon_host + String(":") + CARBON_PORT);
     carbon_client.connect(carbon_host.c_str(), CARBON_PORT);
     client_connect_attempts += 1;
     if (carbon_client.connected()) {
@@ -22,13 +23,16 @@ void send(String payload) {
 }
 
 void write_carbon(String metric, String value) {
+  Serial.print(String("Sending "));
+
   send(String("temp_sensor."));
-  send(metric_hostname);
+  send(sensor_name);
   send(String("."));
   send(metric);
   send(String(" "));
   send(value);
   send(String(" -1.\n"));
+  Serial.print(String("\r"));
 }
 
 void handleCarbon() {
@@ -36,9 +40,6 @@ void handleCarbon() {
   if (!carbon_client.connected()) { connectCarbonClient(); }
 
   updateEnvironment();
-
-  Serial.println(String("\nSending carbon data to ") + carbon_host +
-                 String(":") + CARBON_PORT);
 
   write_carbon(String("altitude "), String(env.altitude));
   write_carbon(String("celcius "), String(env.celcius));
