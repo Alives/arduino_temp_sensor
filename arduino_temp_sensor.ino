@@ -1,7 +1,7 @@
 #include <Ethernet.h>
 #include <ESP8266WiFi.h>
 
-#define VERSION "10.0"
+#define VERSION "11.0"
 #define CARBON_PORT 2003
 #define HTTPS_PORT 443
 #define POST_INTERVAL 5000
@@ -13,7 +13,15 @@
 #define VERSION_WiFiManager "2.0.17"
 
 
-struct env_t { float altitude, celcius, fahrenheit, humidity, pressure; } env;
+struct env_t {
+  float altitude,
+        celcius,
+        dewpointC,
+        dewpointF,
+        fahrenheit,
+        humidity,
+        pressure;
+} env;
 uint32_t client_connect_attempts = 0L;
 uint32_t next_post_timestamp = 0L;
 uint32_t wifi_connect_attempts = 0L;

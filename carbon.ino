@@ -43,6 +43,8 @@ void handleCarbon() {
 
   write_carbon(String("altitude "), String(env.altitude));
   write_carbon(String("celcius "), String(env.celcius));
+  write_carbon(String("dewpointC "), String(env.dewpointC));
+  write_carbon(String("dewpointF "), String(env.dewpointF));
   write_carbon(String("fahrenheit "), String(env.fahrenheit));
   write_carbon(String("humidity "), String(env.humidity));
   write_carbon(String("pressure "), String(env.pressure));
