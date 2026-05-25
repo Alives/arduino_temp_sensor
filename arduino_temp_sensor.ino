@@ -1,6 +1,6 @@
 #include <ESP8266WiFi.h>
 
-#define VERSION "12.6"
+#define VERSION "13.3"
 #define CARBON_PORT 2003
 #define POST_INTERVAL 5000
 

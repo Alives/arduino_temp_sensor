@@ -1,0 +1,7 @@
+# Exported binaries and build output directory
+bin/
+
+# Compilation outputs
+*.bin
+*.elf
+*.hex

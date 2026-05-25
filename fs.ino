@@ -1,20 +1,20 @@
-#include <FS.h>
+#include <LittleFS.h>
 
-bool spiffs_initialized = false;
+bool fs_initialized = false;
 
 String readFile(const String filename) {
-  if (!spiffs_initialized) {
-    Serial.println(F("ERROR: SPIFFS not initialized, cannot read file"));
+  if (!fs_initialized) {
+    Serial.println(F("ERROR: LittleFS not initialized, cannot read file"));
     return "";
   }
   
-  if (!SPIFFS.exists(filename)) {
+  if (!LittleFS.exists(filename)) {
     Serial.print(F("File not found: "));
     Serial.println(filename);
     return "";
   }
   
-  File file = SPIFFS.open(filename, "r");
+  File file = LittleFS.open(filename, "r");
   if (!file) {
     Serial.print(F("ERROR: Failed to open file for reading: "));
     Serial.println(filename);
@@ -32,12 +32,12 @@ String readFile(const String filename) {
 }
 
 bool writeFile(const String filename, String content) {
-  if (!spiffs_initialized) {
-    Serial.println(F("ERROR: SPIFFS not initialized, cannot write file"));
+  if (!fs_initialized) {
+    Serial.println(F("ERROR: LittleFS not initialized, cannot write file"));
     return false;
   }
   
-  File file = SPIFFS.open(filename, "w");
+  File file = LittleFS.open(filename, "w");
   if (!file) {
     Serial.print(F("ERROR: Failed to open file for writing: "));
     Serial.println(filename);
@@ -67,15 +67,15 @@ bool writeFile(const String filename, String content) {
 }
 
 void setupFS() {
-  Serial.print(F("Initializing SPIFFS... "));
-  spiffs_initialized = SPIFFS.begin();
+  Serial.print(F("Initializing LittleFS... "));
+  fs_initialized = LittleFS.begin();
   
-  if (spiffs_initialized) {
+  if (fs_initialized) {
     Serial.println(F("OK"));
     
     // Print filesystem info
     FSInfo fs_info;
-    if (SPIFFS.info(fs_info)) {
+    if (LittleFS.info(fs_info)) {
       Serial.print(F("  Total: "));
       Serial.print(fs_info.totalBytes / 1024);
       Serial.println(F(" KB"));
@@ -85,8 +85,8 @@ void setupFS() {
     }
   } else {
     Serial.println(F("FAILED!"));
-    Serial.println(F("WARNING: SPIFFS filesystem failed to initialize."));
+    Serial.println(F("WARNING: LittleFS filesystem failed to initialize."));
     Serial.println(F("Configuration will not persist across reboots."));
-    Serial.println(F("Try uploading filesystem image or formatting SPIFFS."));
+    Serial.println(F("Try uploading filesystem image or formatting LittleFS."));
   }
 }
