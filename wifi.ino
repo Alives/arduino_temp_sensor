@@ -120,6 +120,8 @@ void handleStatusPage() {
   // Section: Sensor Readings
   wifi_manager.server->sendContent(F("<h3>"));
   wifi_manager.server->sendContent(sensor_name);
+  wifi_manager.server->sendContent(F(" v"));
+  wifi_manager.server->sendContent(VERSION);
   wifi_manager.server->sendContent(F("</h3><hr>"));
 
   char float_buf[16];
@@ -427,26 +429,41 @@ void saveParams() {
   String value;
 
   value = param_carbon_host->getValue();
-  // Only save if value is non-empty AND different from current
-  // This prevents accidentally clearing config when form fields are empty
-  if (value.length() > 0 && !carbon_host.equals(value)) {
-    Serial.print(F("Updating carbon_host: "));
-    Serial.print(carbon_host);
-    Serial.print(F(" -> "));
-    Serial.println(value);
-    carbon_host = value;
-    writeFile("/carbon_host", carbon_host);
-  } else if (value.length() == 0 && carbon_host.length() > 0) {
-    Serial.println(F("Keeping existing carbon_host (form was empty)"));
+  value.trim();
+  if (value.length() > 0) {
+    if (!carbon_host.equals(value)) {
+      Serial.print(F("Updating carbon_host: "));
+      Serial.print(carbon_host);
+      Serial.print(F(" -> "));
+      Serial.println(value);
+      carbon_host = value;
+      writeFile("/carbon_host", carbon_host);
+    }
+  } else {
+    if (!carbon_host.equals(DEFAULT_CARBON_HOST)) {
+      Serial.print(F("Updating carbon_host (unset -> default): "));
+      Serial.print(carbon_host);
+      Serial.print(F(" -> "));
+      Serial.println(DEFAULT_CARBON_HOST);
+      carbon_host = DEFAULT_CARBON_HOST;
+      writeFile("/carbon_host", carbon_host);
+    }
   }
 
   value = param_ota_password->getValue();
-  if (value.length() > 0 && !ota_password.equals(value)) {
-    Serial.println(F("Updating ota_password"));
-    ota_password = value;
-    writeFile("/ota_password", ota_password);
-  } else if (value.length() == 0 && ota_password.length() > 0) {
-    Serial.println(F("Keeping existing ota_password (form was empty)"));
+  value.trim();
+  if (value.length() > 0) {
+    if (!ota_password.equals(value)) {
+      Serial.println(F("Updating ota_password"));
+      ota_password = value;
+      writeFile("/ota_password", ota_password);
+    }
+  } else {
+    if (!ota_password.equals(DEFAULT_OTA_PASSWORD)) {
+      Serial.println(F("Updating ota_password (unset -> default)"));
+      ota_password = DEFAULT_OTA_PASSWORD;
+      writeFile("/ota_password", ota_password);
+    }
   }
 
   value = param_sensor_name->getValue();

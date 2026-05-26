@@ -68,8 +68,6 @@ void write_carbon(const char* metric, float value) {
       Serial.print(F(" of "));
       Serial.println(len);
     }
-    // Flush RX buffer / discard any incoming bytes
-    carbon_client.flush();
   } else {
     Serial.print(F("ERROR: metric buffer overflow for "));
     Serial.println(metric);
@@ -92,7 +90,6 @@ void write_carbon(const char* metric, uint32_t value) {
       Serial.print(F(" of "));
       Serial.println(len);
     }
-    carbon_client.flush();
   } else {
     Serial.print(F("ERROR: metric buffer overflow for "));
     Serial.println(metric);
@@ -115,7 +112,6 @@ void write_carbon(const char* metric, int32_t value) {
       Serial.print(F(" of "));
       Serial.println(len);
     }
-    carbon_client.flush();
   } else {
     Serial.print(F("ERROR: metric buffer overflow for "));
     Serial.println(metric);
@@ -129,14 +125,10 @@ void write_carbon(const char* metric, uint8_t value) {
 
 void handleCarbon() {
   if (!getWiFiStatus()) { return; }
-  
-  // Ensure we close any existing stale connection before connecting fresh
-  if (carbon_client.connected()) {
-    carbon_client.stop();
-  }
-  
-  if (!connectCarbonClient()) {
-    return;  // Connection failed, skip this cycle
+  if (!carbon_client.connected()) {
+    if (!connectCarbonClient()) {
+      return;  // Connection failed, skip this cycle
+    }
   }
 
   updateEnvironment();
@@ -160,7 +152,4 @@ void handleCarbon() {
   
   // RSSI is signed (can be negative)
   write_carbon("RSSI", (int32_t)WiFi.RSSI());
-  
-  // Cleanly close the connection at the end of the post cycle
-  carbon_client.stop();
 }

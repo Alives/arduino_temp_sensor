@@ -1,18 +1,15 @@
 #include <ESP8266WiFi.h>
 
-#define VERSION "13.3"
+#define VERSION "13.5"
 #define CARBON_PORT 2003
 #define POST_INTERVAL 5000
+
+#define DEFAULT_CARBON_HOST "server"
+#define DEFAULT_OTA_PASSWORD "password"
 
 // Reboot every 24 hours to clear any memory fragmentation or stuck states
 // 24 hours = 24 * 60 * 60 * 1000 = 86,400,000 milliseconds
 #define REBOOT_INTERVAL_MS 86400000UL
-
-#define VERSION_ArduinoOTA "1.1.0"
-#define VERSION_Adafruit_BME280 "2.2.4"
-#define VERSION_Adafruit_Unified_Sensor "1.1.14"
-#define VERSION_esp8266_firmware "3.1.2"
-#define VERSION_WiFiManager "2.0.17"
 
 
 struct env_t {
@@ -72,17 +69,7 @@ void setup() {
   Serial.println(ESP.getCoreVersion());
   Serial.print("SDK:                     ");
   Serial.println(ESP.getSdkVersion());
-  Serial.print("esp8266 Board Firmware:  ");
-  Serial.println(VERSION_esp8266_firmware);
-  Serial.println();
-  Serial.print("Adafruit BME:            ");
-  Serial.println(VERSION_Adafruit_BME280);
-  Serial.print("Adafruit Unified Sensor: ");
-  Serial.println(VERSION_Adafruit_Unified_Sensor);
-  Serial.print("ArduinoOTA:              ");
-  Serial.println(VERSION_ArduinoOTA);
-  Serial.print("WiFiManager:             ");
-  Serial.println(VERSION_WiFiManager);
+
   Serial.println();
   Serial.print("Code Version:            ");
   Serial.println(VERSION);
@@ -93,7 +80,13 @@ void setup() {
 
   setupFS();
   carbon_host = readFile("/carbon_host");
+  if (carbon_host.length() == 0) {
+    carbon_host = DEFAULT_CARBON_HOST;
+  }
   ota_password = readFile("/ota_password");
+  if (ota_password.length() == 0) {
+    ota_password = DEFAULT_OTA_PASSWORD;
+  }
   
   // Load sensor_name from SPIFFS, but keep chip ID name if SPIFFS is empty
   String saved_sensor_name = readFile("/sensor_name");

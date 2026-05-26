@@ -1,8 +1,5 @@
 #include <ArduinoOTA.h>
 
-// Default OTA password if none configured (security: prevents unauthenticated uploads)
-#define DEFAULT_OTA_PASSWORD "password"
-
 void setupArduinoOTA() {
   ArduinoOTA.onStart([]() { Serial.println("ArduinoOTA Started"); });
 
